@@ -1,19 +1,8 @@
-import random
-import math
-from node import *
 from rbtree import *
+import time
 
 
 class TangoTree:
-    # class Node:
-    #     def __init__(self, key):
-    #         self.key = key
-    #         self.left = None
-    #         self.right = None
-    #         self.prefer = 1   # 0 : left child, 1 : right child
-    #         self.depth = 0
-
-    search_cnt = 0
 
     def __init__(self, inputs):
         self.root = None
@@ -21,35 +10,74 @@ class TangoTree:
         self.online_insert(inputs)
         self.aux = None
 
-    # def search(self, key):
-    #     global search_cnt
-    #
-    #     cur = self.root
-    #     while cur is not None:
-    #         if key < cur.key:
-    #             cur = cur.left
-    #         elif key > cur.key:
-    #             cur = cur.right
-    #         else:
-    #             return cur
-    #     return None
+    def search(self, key):
+        global search_cnt
 
-    def tango_search(self, key):
-        cur = self.aux.root
-        target = None
+        cur = self.root
         while cur is not None:
             if key < cur.key:
                 cur = cur.left
             elif key > cur.key:
                 cur = cur.right
             else:
-                target = cur
-        target = None
+                return cur
+        return None
+
+    def tango_search(self, key):
+        # Find key in auxiliary tango tree
+        if self.aux is not None:
+            start = time.time()
+            cur = self.aux.root
+            while cur is not None:
+                if key < cur.key:
+                    cur = cur.left
+                elif key > cur.key:
+                    cur = cur.right
+                else:
+                    break
+            end = time.time()
+            if cur is None:
+                return end - start
+        else:
+            start = time.time()
+            cur = self.root
+            parent = None
+            while cur is not None:
+                if key < cur.key:
+                    parent = cur
+                    cur = cur.left
+                    parent.prefer = 0
+                elif key > cur.key:
+                    parent = cur
+                    cur = cur.right
+                    parent.prefer = 1
+                else:
+                    break
+            end = time.time()
+            if cur is None:
+                return end - start
+
+        # Update preferred paths
+        cur = self.root
+        parent = None
+        while cur is not None:
+            if key < cur.key:
+                parent = cur
+                cur = cur.left
+                parent.prefer = 0
+            elif key > cur.key:
+                parent = cur
+                cur = cur.right
+                parent.prefer = 1
+            else:
+                break
+
         self.tango_update()
 
-        return target
+        return end - start
 
     def tango_update(self):
+        # Make a list of preferred paths
         aux_paths = [[self.root.key]]
         ap_i = 0
         while ap_i < len(aux_paths):
@@ -69,21 +97,31 @@ class TangoTree:
                     cur = cur.right
             ap_i += 1
 
+        # Make auxiliary trees of preferred paths
+        n_aux = len(aux_paths)
+        aux_trees =[]
+        for at_i in range(n_aux):
+            rbtree = RedBlackTree()
+            for key in aux_paths[at_i]:
+                rbtree.insert(key)
+            aux_trees.append(rbtree)
 
-
-
-
-    # def preferred_path(self, node):
-    #     cur = node
-    #     path = []
-    #     while cur is not None:
-    #         path.append(cur.key)
-    #         if cur.prefer == 0:
-    #             cur = cur.left
-    #         elif cur.prefer == 1:
-    #             cur = cur.right
-    #
-    #     return path
+        # Make a spare Tango tree
+        self.aux = aux_trees[0]
+        for i in range(1, n_aux):
+            key = aux_trees[i].root.key
+            cur = self.aux.root
+            parent = None
+            while cur is not None:
+                parent = cur
+                if key < cur.key:
+                    cur = cur.left
+                elif key > cur.key:
+                    cur = cur.right
+            if key < parent.key:
+                parent.left = aux_trees[i].root
+            else:
+                parent.right = aux_trees[i].root
 
     def online_insert(self, inputs):
         for key in inputs:
@@ -123,36 +161,19 @@ class TangoTree:
         else:
             return None, -1
 
-    def print_tango(self):
-        self.print_util(self.root)
+    @staticmethod
+    def print_tree(tree):
+        if tree is None:
+            return
+        TangoTree.print_util(tree.root, 0)
 
-    def print_util(self, node):
+    @staticmethod
+    def print_util(node, depth):
         if node.right is not None:
-            self.print_util(node.right)
-        print('      ' * node.depth, end='')
+            TangoTree.print_util(node.right, depth + 1)
+        print('      ' * depth, end='')
         print(node.key)
         if node.left is not None:
-            self.print_util(node.left)
+            TangoTree.print_util(node.left, depth + 1)
 
-
-if __name__ == '__main__':
-    fn = 'input0.txt'
-    f = open(fn, 'r')
-    inputs = f.readlines()
-    f.close()
-
-    print('Inserting...')
-    for i in range(len(inputs)):
-        inputs[i] = int(inputs[i])
-
-    tango = TangoTree(inputs)
-    tango.print_tango()
-
-    # print('Searching...')
-    # for i in range(len(inputs)):
-    #     num = random.randint(1, len(inputs))
-    #     tango.search(num)
-
-    path_root = tango.preferred_path(tango.root)
-    print(path_root)
 

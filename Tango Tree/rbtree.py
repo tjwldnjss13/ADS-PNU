@@ -1,4 +1,3 @@
-import random
 from node import *
 
 
@@ -51,6 +50,7 @@ class RedBlackTree:
                     parent.right = node
                 node.parent = parent
                 node.depth = parent.depth + 1
+                self.N_key += 1
 
                 # Reconstruct / Recolor conditions
                 if node.parent.color == 'r':
