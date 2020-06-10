@@ -2,7 +2,7 @@ from Tango import *
 import random
 import matplotlib.pyplot as plt
 
-fn = 'input3.txt'
+fn = 'input4.txt'
 f = open(fn, 'r')
 inputs = f.readlines()
 f.close()
@@ -14,7 +14,7 @@ for i in range(len(inputs)):
     inputs[i] = int(inputs[i])
 
 tango = TangoTree(inputs)
-# TangoTree.print_tree(tango)
+# TangoTree.print_tree(tango.bst)
 
 print('Tango Searching...')
 total_tango_search_time = 0
