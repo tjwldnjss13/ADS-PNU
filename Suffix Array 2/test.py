@@ -1,6 +1,4 @@
+a = [1, 2, 3, 4, 5]
 
-a = 'abc'
-c = 'abc'
-
-if a == c:
-    print(1)
+for i in range(10, 0, -1):
+    print(i)
