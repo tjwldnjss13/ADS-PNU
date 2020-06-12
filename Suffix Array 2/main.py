@@ -5,6 +5,6 @@ from suffix_array_2 import *
 #
 # N, T, SA, LCP, M, Q = datas[0], datas[1], datas[2], datas[3], datas[4], datas[5]
 
-T = 'acacccaacca$'
+T = 'baabaabbaa$'
 
 build_suffix_array(T)
