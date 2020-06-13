@@ -4,7 +4,7 @@ import math
 
 def build_suffix_array(T, recur_f=False):
     if not recur_f:
-        reduced_T = reduced_str_ab(T)
+        reduced_T = reduced_str_dna(T)
     else:
         reduced_T = T
 
@@ -17,15 +17,19 @@ def build_suffix_array(T, recur_f=False):
     s1_rank, s2_rank = s12_reduced_str[:len(s1)], s12_reduced_str[len(s1):]
 
     for i in range(len(s2)):
-        s2[i] = s2[i][0] + s2_rank[i] + '0'
+        # s2[i] = s2[i][0] + s2_rank[i] + '0'
+        s2[i][1] = s2_rank[i]
+        s2[i][2] = 0
 
     for i in range(len(s1)):
         if i < len(s2):
-            s1[i] = s1[i][0] + s2[i][:2]
+            # s1[i] = s1[i][0] + s2[i][:2]
+            s1[i][1:3] = s2[i][:2]
 
     for i in range(len(s0)):
         if i < len(s1):
-            s0[i] = s0[i][0] + s1[i][:2]
+            # s0[i] = s0[i][0] + s1[i][:2]
+            s0[i][1:3] = s1[i][:2]
 
     s_full = []
     s0_i, s1_i, s2_i = 0, 0, 0
@@ -44,7 +48,7 @@ def build_suffix_array(T, recur_f=False):
     for i in range(len(reduced_T)):
         s_idx.append(i)
 
-    print('S012 before merge : ', end='')
+    print('S012 before sorted : ', end='')
     print(s_full)
 
     merge_sort(s_full, s_idx, 0, len(s_full) - 1)
@@ -58,17 +62,30 @@ def build_suffix_array(T, recur_f=False):
         s_rank[i] = rank_i
         rank_i += 1
 
-    s_rank_str = ''
+    s_rank_str = []
     for rank in s_rank:
-        s_rank_str += str(rank)
+        s_rank_str.append(rank)
 
-    print('S012 after merge : ', end='')
+    print('S012 after sorted : ', end='')
     print(s_full)
     print('Rank : ', end='')
-    print(s_rank_str)
+    print(s_rank)
+    print('Idx : ', end='')
+    print(s_idx)
 
     if recur_f:
         return s_rank_str
+
+    suffix_array = []
+    sa_i = 0
+    while sa_i < len(s_rank):
+        for i in range(len(s_rank)):
+            if sa_i == s_rank[i]:
+                suffix_array.append(T[i:])
+                sa_i += 1
+
+
+    return suffix_array
 
 
 def datafile(fp):
@@ -94,18 +111,18 @@ def datafile(fp):
 
 def reduced_str_dna(str_data):
     print('[1] Make integer sequence')
-    reduced = ''
+    reduced = []
     for c in str_data:
         if c == '$':
-            reduced += '0'
+            reduced.append(0)
         elif c == 'a':
-            reduced += '1'
+            reduced.append(1)
         elif c == 'c':
-            reduced += '2'
+            reduced.append(2)
         elif c == 'g':
-            reduced += '3'
+            reduced.append(3)
         elif c == 't':
-            reduced += '4'
+            reduced.append(4)
     return reduced
 
 
@@ -125,38 +142,51 @@ def reduced_str_ab(str_data):
 
 def s_012(str_data):
     print('[2] Make triplet sequence S0, S1, S2')
+    print(str_data)
 
     s0, s1, s2 = [], [], []
     s0_done, s1_done, s2_done = False, False, False
 
     for i in range(math.ceil(len(str_data) / 3)):
         if not s0_done:
-            str_temp = str_data[3 * i:3 * i + 3]
+            str_temp = []
+            for j in range(3):
+                if 3 * i + j < len(str_data):
+                    str_temp.append(str_data[3 * i + j])
+            # str_temp = str_data[3 * i:3 * i + 3]
             if 3 * i + 3 == len(str_data):
                 s0_done = True
             if len(str_temp) < 3:
                 while len(str_temp) < 3:
-                    str_temp += '0'
+                    str_temp.append(0)
                 s0_done = True
             s0.append(str_temp)
 
         if not s1_done:
-            str_temp = str_data[3 * i + 1:3 * i + 4]
+            str_temp = []
+            for j in range(3):
+                if 3 * i + 1 + j < len(str_data):
+                    str_temp.append(str_data[3 * i + 1 + j])
+            # str_temp = str_data[3 * i + 1:3 * i + 4]
             if 3 * i + 4 == len(str_data):
                 s1_done = True
             if len(str_temp) < 3:
                 while len(str_temp) < 3:
-                    str_temp += '0'
+                    str_temp.append(0)
                 s1_done = True
             s1.append(str_temp)
 
         if not s2_done:
-            str_temp = str_data[3 * i + 2:3 * i + 5]
+            str_temp = []
+            for j in range(3):
+                if 3 * i + 2 + j < len(str_data):
+                    str_temp.append(str_data[3 * i + 2 + j])
+            # str_temp = str_data[3 * i + 2:3 * i + 5]
             if 3 * i + 5 == len(str_data):
                 s2_done = True
             if len(str_temp) < 3:
                 while len(str_temp) < 3:
-                    str_temp += '0'
+                    str_temp.append(0)
                 s2_done = True
             s2.append(str_temp)
 
@@ -171,13 +201,24 @@ def merge_s12(s1, s2):
     for s in s2:
         s12.append(s)
     s12_sorted = copy.deepcopy(s12)
-    s12_sorted = list(set(s12_sorted))
+    # s12_sorted = list(set(s12_sorted))
+
+    s12_i = 0
+    while s12_i < len(s12_sorted) - 1:
+        if s12_sorted[s12_i] in s12_sorted[s12_i + 1:]:
+            s12_sorted.pop(s12_i)
+        s12_i += 1
+
+    # for s12_i in range(len(s12_sorted) - 1):
+    #     if s12_sorted[s12_i] in s12_sorted[s12_i + 1:]:
+    #         s12_sorted.pop(s12_i)
+
     s12_sorted.sort()
-    s12_reduced_str = ''
+    s12_reduced_str = []
     for i in range(len(s12)):
         for j in range(len(s12_sorted)):
             if s12[i] == s12_sorted[j]:
-                s12_reduced_str += str(j)
+                s12_reduced_str.append(j)
                 break
 
     # Check duplicated ranks
