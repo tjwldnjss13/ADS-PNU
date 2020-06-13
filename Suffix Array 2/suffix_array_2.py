@@ -16,34 +16,22 @@ def build_suffix_array(T, recur_f=False):
 
     s1_rank, s2_rank = s12_reduced_str[:len(s1)], s12_reduced_str[len(s1):]
 
-    s1_simple = copy.deepcopy(s1)
-    for i in range(len(s1)):
-        s1_simple[i] = s1_simple[i][0]
-        for j in range(len(s2)):
-            if s1[i][1:3] == s2[j][:2]:
-                s1_simple[i] += str(s2_rank[j])
-                break
+    for i in range(len(s2)):
+        s2[i] = s2[i][0] + s2_rank[i] + '0'
 
-    s0_simple = copy.deepcopy(s0)
+    for i in range(len(s1)):
+        if i < len(s2):
+            s1[i] = s1[i][0] + s2[i][:2]
+
     for i in range(len(s0)):
-        s0_simple[i] = s0_simple[i][0]
-        match_f = False
-        for j in range(len(s1)):
-            if s0[i][1:3] == s1[j][:2]:
-                s0_simple[i] += str(s1_rank[j]) + s1_simple[j][1]
-                match_f = True
-                break
-        if not match_f:
-            if len(s0_simple[i]) == 1:
-                s0_simple[i] += '00'
-            else:
-                s0_simple[i] += '0'
+        if i < len(s1):
+            s0[i] = s0[i][0] + s1[i][:2]
 
     s_full = []
     s0_i, s1_i, s2_i = 0, 0, 0
     for i in range(len(reduced_T)):
         if i % 3 == 0:
-            s_full.append(s0_simple[s0_i])
+            s_full.append(s0[s0_i])
             s0_i += 1
         elif i % 3 == 1:
             s_full.append(s1[s1_i])
@@ -56,6 +44,7 @@ def build_suffix_array(T, recur_f=False):
     for i in range(len(reduced_T)):
         s_idx.append(i)
 
+    print('S012 before merge : ', end='')
     print(s_full)
 
     merge_sort(s_full, s_idx, 0, len(s_full) - 1)
@@ -73,7 +62,9 @@ def build_suffix_array(T, recur_f=False):
     for rank in s_rank:
         s_rank_str += str(rank)
 
+    print('S012 after merge : ', end='')
     print(s_full)
+    print('Rank : ', end='')
     print(s_rank_str)
 
     if recur_f:
