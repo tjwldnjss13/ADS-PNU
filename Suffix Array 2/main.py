@@ -1,14 +1,15 @@
 from suffix_array_2 import *
+import time
 
-# fp = './input1.txt'
-# datas = datafile(fp)
-#
-# N, T, SA, LCP, M, Q = datas[0], datas[1], datas[2], datas[3], datas[4], datas[5]
+fn = 'input.txt'
+T = datafile(fn)
 
-# T = 'baabaabbaa$'
-T = 'agacgtctacgacgtacagcatgcatcgtagct$'
+start = time.time()
+suffix_array = build_suffix_array(T, print_f=False)
+end = time.time()
 
-suffix_array = build_suffix_array(T)
-print('>Final result (Suffix array)')
+print('Time : {}'.format(end - start))
+
+print('\n>Final result (Suffix array)')
 for sa in suffix_array:
     print(sa)

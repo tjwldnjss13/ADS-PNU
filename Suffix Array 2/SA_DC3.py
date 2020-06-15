@@ -2,34 +2,33 @@ import copy
 import math
 
 
-def build_suffix_array(T, recur_f=False):
+def build_suffix_array(T, recur_f=False, recur_level=0, print_f=True):
     if not recur_f:
-        reduced_T = reduced_str_dna(T)
+        reduced_T = reduced_str_dna(T, print_f)
     else:
         reduced_T = T
 
-    s0, s1, s2 = s_012(reduced_T)
-    s12, s12_reduced_str, dup_f = merge_s12(s1, s2)
+    s0, s1, s2 = s_012(reduced_T, recur_level, print_f)
+    s12, s12_reduced_str, dup_f = merge_s12(s1, s2, recur_level, print_f)
 
     if dup_f:
-        s12_reduced_str = build_suffix_array(s12_reduced_str, True)
+        s12_reduced_str = build_suffix_array(s12_reduced_str, True, recur_level + 1, print_f)
 
     s1_rank, s2_rank = s12_reduced_str[:len(s1)], s12_reduced_str[len(s1):]
 
-    for i in range(len(s2)):
-        # s2[i] = s2[i][0] + s2_rank[i] + '0'
-        s2[i][1] = s2_rank[i]
-        s2[i][2] = 0
+    if print_f:
+        print('    ' * recur_level, end='')
+        print('[4] Sort S0')
 
     for i in range(len(s1)):
         if i < len(s2):
-            # s1[i] = s1[i][0] + s2[i][:2]
-            s1[i][1:3] = s2[i][:2]
+            s1[i].append(s2_rank[i])
 
     for i in range(len(s0)):
         if i < len(s1):
-            # s0[i] = s0[i][0] + s1[i][:2]
-            s0[i][1:3] = s1[i][:2]
+            s0[i].append(s1_rank[i])
+            if i < len(s2):
+                s0[i].append(s2_rank[i])
 
     s_full = []
     s0_i, s1_i, s2_i = 0, 0, 0
@@ -48,10 +47,14 @@ def build_suffix_array(T, recur_f=False):
     for i in range(len(reduced_T)):
         s_idx.append(i)
 
-    print('S012 before sorted : ', end='')
-    print(s_full)
+    if print_f:
+        print('    ' * recur_level, end='')
+        print('[5] Merge S0 & S12')
 
     merge_sort(s_full, s_idx, 0, len(s_full) - 1)
+    for s in s_full:
+        while len(s) > 3:
+            s.pop(-1)
 
     s_rank = []
     for i in range(len(s_idx)):
@@ -66,15 +69,16 @@ def build_suffix_array(T, recur_f=False):
     for rank in s_rank:
         s_rank_str.append(rank)
 
-    print('S012 after sorted : ', end='')
-    print(s_full)
-    print('Rank : ', end='')
-    print(s_rank)
-    print('Idx : ', end='')
-    print(s_idx)
+    if print_f:
+        print('    ' * recur_level, end='')
+        print('    S reduced string : ', end='')
+        print(s_rank)
 
     if recur_f:
         return s_rank_str
+
+    if print_f:
+        print('[6] Make suffix array')
 
     suffix_array = []
     sa_i = 0
@@ -84,33 +88,12 @@ def build_suffix_array(T, recur_f=False):
                 suffix_array.append(T[i:])
                 sa_i += 1
 
-
     return suffix_array
 
 
-def datafile(fp):
-    f = open(fp, 'r')
-    lines = f.readlines()
-    f.close()
-    N = int(lines[0])
-    T = lines[1]
-    SA_str = lines[2].strip().split(' ')
-    SA = []
-    for sa in SA_str:
-        SA.append(int(sa))
-    LCP = lines[3]
-    N_q = int(lines[4])
-    Q = []
-    for i in range(5, N_q + 5):
-        q_temp = lines[i].split('\n')[0]
-        q_temp += '$'
-        Q.append(q_temp)
-
-    return [N, T, SA, LCP, N_q, Q]
-
-
-def reduced_str_dna(str_data):
-    print('[1] Make integer sequence')
+def reduced_str_dna(str_data, print_f=True):
+    if print_f:
+        print('[1] Make integer sequence')
     reduced = []
     for c in str_data:
         if c == '$':
@@ -123,26 +106,17 @@ def reduced_str_dna(str_data):
             reduced.append(3)
         elif c == 't':
             reduced.append(4)
+
+    if print_f:
+        print('    ', end='')
+        print(reduced)
     return reduced
 
 
-def reduced_str_ab(str_data):
-    print('[1] Make integer sequence')
-
-    reduced = ''
-    for c in str_data:
-        if c == '$':
-            reduced += '0'
-        elif c == 'a':
-            reduced += '1'
-        elif c == 'b':
-            reduced += '2'
-    return reduced
-
-
-def s_012(str_data):
-    print('[2] Make triplet sequence S0, S1, S2')
-    print(str_data)
+def s_012(str_data, recur_level, print_f=True):
+    if print_f:
+        print('    ' * recur_level, end='')
+        print('[2] Make triplet sequence S0, S1, S2')
 
     s0, s1, s2 = [], [], []
     s0_done, s1_done, s2_done = False, False, False
@@ -190,11 +164,23 @@ def s_012(str_data):
                 s2_done = True
             s2.append(str_temp)
 
+    if print_f:
+        print('    ' * recur_level, end='')
+        print('    S0 : ', end='')
+        print(s0)
+        print('    ' * recur_level, end='')
+        print('    S1 : ', end='')
+        print(s1)
+        print('    ' * recur_level, end='')
+        print('    S2 : ', end='')
+        print(s2)
     return s0, s1, s2
 
 
-def merge_s12(s1, s2):
-    print('[3] Merge S1, S2 & Sort S12')
+def merge_s12(s1, s2, recur_level, print_f=True):
+    if print_f:
+        print('    ' * recur_level, end='')
+        print('[3] Merge S1, S2 & Sort S12')
 
     # Concatenate S1, S2gte
     s12 = copy.deepcopy(s1)
@@ -228,6 +214,13 @@ def merge_s12(s1, s2):
             dup_f = True
             break
 
+    if print_f:
+        print('    ' * recur_level, end='')
+        print('    S12 : ', end='')
+        print(s12)
+        print('    ' * recur_level, end='')
+        print('    S12 reduced string : ', end='')
+        print(s12_reduced_str)
     return s12, s12_reduced_str, dup_f
 
 
@@ -246,7 +239,7 @@ def merge(arr, idx_arr, start, mid, end):
     i, j = 0, 0
 
     while i < len(arr1) and j < len(arr2):
-        if arr1[i] < arr2[j]:
+        if arr1[i] <= arr2[j]:
             arr_sorted.append(arr1[i])
             idx_arr_sorted.append(idx_arr1[i])
             i += 1
@@ -271,3 +264,21 @@ def merge(arr, idx_arr, start, mid, end):
         arr[k] = arr_sorted.pop(0)
         idx_arr[k] = idx_arr_sorted.pop(0)
 
+
+def datafile(fn):
+    f = open(fn, 'r')
+    str = f.readline()
+    f.close()
+
+    return str
+
+
+if __name__ == '__main__':
+    fn = 'input.txt'
+    T = datafile(fn)
+
+    suffix_array = build_suffix_array(T, print_f=False)
+
+    print('\n>Final result (Suffix array)')
+    for sa in suffix_array:
+        print(sa)
