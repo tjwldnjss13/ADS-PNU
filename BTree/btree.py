@@ -175,65 +175,13 @@ class BTree:
                 cur = target
                 while len(cur.key) == 0:
                     if cur is self.root:
+                        self.root = cur.child[0]
                         break
                     parent_next = self.get_parent(parent)
                     cur = self.merge(parent, cur)
                     parent = parent_next
                 self.N_key -= 1
                 return
-
-            # if len(target.key) == 1:
-            #     if target is parent.child[0]:
-            #         sib = parent.child[1]
-            #         if len(sib.key) == 1:
-            #             gparent = self.get_parent(parent)
-            #             parent_i = gparent.child.index(parent)
-            #             sib.key.insert(0, parent.key.pop(0))
-            #             if parent is self.root:
-            #                 self.root = sib
-            #                 self.N_key -= 1
-            #                 return
-            #             if len(parent.key) == 0:
-            #                 gparent.child[parent_i] = sib
-            #                 self.N_key -= 1
-            #                 return
-            #             parent.child.pop(0)
-            #             while len(parent.child) < 5:
-            #                 parent.child.append(None)
-            #             self.N_key -= 1
-            #             return
-            #         else:
-            #             target.key[0] = parent.key.pop(0)
-            #             parent.key.insert(0, sib.key.pop(0))
-            #             self.N_key -= 1
-            #             return
-            #     else:
-            #         child_i = parent.child.index(target)
-            #         sib = parent.child[child_i - 1]
-            #         if len(sib.key) == 1:
-            #             gparent = self.get_parent(parent)
-            #             parent_i = gparent.child.index(parent)
-            #             sib.key.append(parent.key.pop(child_i - 1))
-            #             if parent is self.root:
-            #                 self.root = sib
-            #                 self.N_key -= 1
-            #                 return
-            #             if len(parent.key) == 0:
-            #                 gparent.child[parent_i] = sib
-            #                 self.N_key -= 1
-            #                 return
-            #             parent.child.pop(child_i)
-            #             while len(parent.child) < self.degree:
-            #                 parent.child.append(None)
-            #             self.N_key -= 1
-            #             return
-            #         else:
-            #             target.key[0] = parent.key.pop(child_i - 1)
-            #             parent.key.insert(child_i - 1, sib.key.pop(-1))
-            #             self.N_key -= 1
-            #             return
-
-
 
             # Case 2-2
             else:
@@ -246,24 +194,6 @@ class BTree:
 
         # Case 3-1
         if len(target.key) == 1:
-            # cur, parent = pre, self.get_parent(pre)
-            # target.key[key_i] = pre.key[-1]
-            # parent_next = self.get_parent(cur)
-            # cur.key.pop(-1)
-            # if len(cur.key) == 0:
-            #     if parent is target:
-            #         cur_sib = parent.child[1]
-            #         cur_sib.key.insert(0, parent.key.pop(0))
-            #         parent.child.pop(0)
-            #         parent.child.append(None)
-            #     else:
-            #         cur_child_i = parent.child.index(cur)
-            #         cur_sib = parent.child[cur_child_i - 1]
-            #         cur_sib.key.append(parent.key.pop(cur_child_i))
-            #         parent.child.pop(cur_child_i)
-            #         parent.child.append(None)
-            # cur = parent
-            # parent = parent_next
             cur, parent = pre, self.get_parent(pre)
             target.key[key_i] = pre.key.pop(-1)
 
@@ -276,17 +206,6 @@ class BTree:
                 parent = parent_next
             self.N_key -= 1
             return
-
-            # target.key[0] = target.pre[0].key.pop(-1)
-            # if len(target.child[0].key) == 0:
-            #     if len(target.child[1].key) == 1:
-            #
-            #     else:
-            #         target.child[0].key.append(target.key.pop(0))
-            #         target.key.append(target.child[1].key.pop(0))
-            # else:
-            #     pass
-
 
         # Case 3-2
         else:
@@ -311,17 +230,6 @@ class BTree:
                 self.N_key -= 1
                 return
 
-
-
-
-
-                # key_temp = pre.key[0]
-                # self.delete(key_temp, pre)
-                # target = self.search(key)
-                # key_i = target.key.index(key)
-                # target.key[key_i] = key_temp
-                # return
-
     def merge(self, parent, child_empty):
         child_empty_i = parent.child.index(child_empty)
         if child_empty_i == 0:
@@ -342,16 +250,19 @@ class BTree:
                 parent.key.insert(child_empty_i, child_merge.key.pop(0))
             else:
                 child_empty.key.append(child_merge.key.pop(0))
-            # if len(parent.key) == 0:
-            #     child_empty.key.append(child_merge.key.pop(0))
-            # else:
-            #     parent.key.insert(child_empty_i, child_merge.key.pop(0))
+
             if len(child_empty.key) > 0:
-                for i in range(len(child_empty.key) + 1):
-                    child_empty.child[i] = sub_childs.pop(0)
+                for i in range(self.degree):
+                    if i < len(child_empty.key) + 1:
+                        child_empty.child[i] = sub_childs.pop(0)
+                    else:
+                        child_empty.child[i] = None
             if len(child_merge.key) > 0:
-                for i in range(len(child_merge.key) + 1):
-                    child_merge.child[i] = sub_childs.pop(0)
+                for i in range(self.degree):
+                    if i < len(child_merge.key) + 1:
+                        child_merge.child[i] = sub_childs.pop(0)
+                    else:
+                        child_merge.child[i] = None
             if len(child_merge.key) == 0:
                 parent.child.pop(child_merge_i)
                 parent.child.append(None)
@@ -368,16 +279,19 @@ class BTree:
                 parent.key.insert(child_merge_i, child_merge.key.pop(-1))
             else:
                 child_empty.key.insert(0, child_merge.key.pop(0))
-            # if len(parent.key) == 0:
-            #     child_empty.key.append(child_merge.key.pop(-1))
-            # else:
-            #     parent.key.insert(child_empty_i, child_merge.key.pop(-1))
+
             if len(child_merge.key) > 0:
-                for i in range(len(child_merge.key) + 1):
-                    child_merge.child[i] = sub_childs.pop(0)
+                for i in range(self.degree):
+                    if i < len(child_merge.key) + 1:
+                        child_merge.child[i] = sub_childs.pop(0)
+                    else:
+                        child_merge.child[i] = None
             if len(child_empty.key) > 0:
-                for i in range(len(child_empty.key) + 1):
-                    child_empty.child[i] = sub_childs.pop(0)
+                for i in range(self.degree):
+                    if i < len(child_empty.key) + 1:
+                        child_empty.child[i] = sub_childs.pop(0)
+                    else:
+                        child_empty.child[i] = None
             if len(child_merge.key) == 0:
                 parent.child.pop(child_merge_i)
                 parent.child.append(None)
@@ -441,7 +355,8 @@ class BTree:
 
     @staticmethod
     def print_tree(tree):
-        BTree.print_tree_util(tree.root, 0)
+        if tree.root is not None:
+            BTree.print_tree_util(tree.root, 0)
 
     @staticmethod
     def print_tree_util(node, depth):

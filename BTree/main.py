@@ -1,46 +1,105 @@
 from btree import *
 import random
+import time
+import matplotlib.pyplot as plt
 
-fn = './input1.txt'
+fn = 'input.txt'
 f = open(fn, 'r')
-data_list = f.readlines()
-for i in range(len(data_list)):
-    data_list[i] = int(data_list[i])
+datas = f.readlines()
+f.close()
+N_data_list = []
+for i in range(len(datas)):
+    N_data_list.append(i + 1)
+    datas[i] = int(datas[i])
 
-tree = BTree(3)
-for data in data_list:
-    print('[Insert {}]'.format(data))
-    tree.insert(data)
-    # if tree.search(data) is None:
-        # print('Something is wrong....')
-    # BTree.print_tree(tree)
-    # print('----------------------------------')
+_23tree, _234tree = BTree(3), BTree(4)
 
-BTree.print_tree(tree)
+print('Inserting...')
 
-print('---------------------------------------')
+_23_insert_time = []
+start = time.time()
+for data in datas:
+    _23tree.insert(data)
+    mid = time.time()
+    _23_insert_time.append(mid - start)
 
-del_cnt = 0
+_234_insert_time = []
+start = time.time()
+for data in datas:
+    _234tree.insert(data)
+    mid = time.time()
+    _234_insert_time.append(mid - start)
 
-# data_del = 1100
-# print('[Delete {}]'.format(data_del))
-# tree.delete(data_del)
+print('Inserting done')
 
-for del_i in range(int(len(data_list))):
-# for del_i in range(50):
-    data_del = data_list[del_i]
-    print('[Delete {}]'.format(data_del))
-    if data_del == 26:
-        BTree.print_tree(tree)
-    tree.delete(data_del)
-    # BTree.print_tree(tree)
-    del_cnt += 1
-    # print('-----------------------------------')
+print('Searching...')
 
-print('Total insertion : {}'.format(len(data_list)))
-print('Total deletion : {}'.format(del_cnt))
-print('Duplicated data (insertion denied) : {}'.format(tree.N_dup))
-print('# of nodes : {}'.format(tree.N_key))
+_23_search_time = []
+start = time.time()
+for i in range(len(datas)):
+    data_search = random.randint(1, len(datas))
+    _23tree.search(data_search)
+    mid = time.time()
+    _23_search_time.append(mid - start)
 
-BTree.print_tree(tree)
-print('Done')
+_234_search_time = []
+start = time.time()
+for i in range(len(datas)):
+    data_search = random.randint(1, len(datas))
+    _234tree.search(data_search)
+    mid = time.time()
+    _234_search_time.append(mid - start)
+
+print('Searching done')
+
+print('Deleting...')
+
+_23_delete_time = []
+start = time.time()
+for i in range(len(datas) / 2):
+    _23tree.delete(datas[-1])
+    mid = time.time()
+    _23_delete_time.append(mid - start)
+
+N_delete_list = []
+_234_delete_time = []
+start = time.time()
+for i in range(len(datas) / 2):
+    _234tree.delete(datas[-1])
+    mid = time.time()
+    _234_delete_time.append(mid - start)
+    N_delete_list.append(i + 1)
+
+print('Deleting done')
+
+print('[Insertion]')
+print('23 Tree  : {}'.format(_23_insert_time[-1]))
+print('234 Tree : {}'.format(_234_insert_time[-1]))
+
+print('\n[Search]')
+print('23 Tree  : {}'.format(_23_search_time[-1]))
+print('234 Tree : {}'.format(_234_search_time[-1]))
+
+print('\n[Deletion]')
+print('23 Tree  : {}'.format(_23_delete_time[-1]))
+print('234 Tree : {}'.format(_234_delete_time[-1]))
+
+plt.figure(0)
+plt.plot(N_data_list, _23_insert_time, 'r-', label='23 Tree')
+plt.plot(N_data_list, _234_insert_time, 'b:', label='234 Tree')
+plt.title('Insert time')
+plt.legend()
+
+plt.figure(1)
+plt.plot(N_data_list, _23_search_time, 'r-', label='23 Tree')
+plt.plot(N_data_list, _234_search_time, 'b:', label='234 Tree')
+plt.title('Search time')
+plt.legend()
+
+plt.figure(2)
+plt.plot(N_delete_list, _23_delete_time, 'r-', label='23 Tree')
+plt.plot(N_delete_list, _234_delete_time, 'b:', label='234 Tree')
+plt.title('Insert time')
+plt.legend()
+
+plt.show()

@@ -1,7 +1,7 @@
 import random
 
-f = open('input1.txt', 'w')
-n = 100
+f = open('input.txt', 'w')
+n = 100000
 data_list = []
 for i in range(n):
     temp = random.randint(1, 2 * n)
