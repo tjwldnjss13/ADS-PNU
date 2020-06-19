@@ -21,11 +21,16 @@ BTree.print_tree(tree)
 print('---------------------------------------')
 
 del_cnt = 0
+
+# data_del = 1100
+# print('[Delete {}]'.format(data_del))
+# tree.delete(data_del)
+
 for del_i in range(int(len(data_list))):
 # for del_i in range(50):
     data_del = data_list[del_i]
     print('[Delete {}]'.format(data_del))
-    if data_del == 95:
+    if data_del == 26:
         BTree.print_tree(tree)
     tree.delete(data_del)
     # BTree.print_tree(tree)

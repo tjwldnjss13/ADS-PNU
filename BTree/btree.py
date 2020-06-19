@@ -170,60 +170,73 @@ class BTree:
         # Case 2
         if target.child[0] is None:
             # Case 2-1
-            if len(target.key) == 1:
-                if target is parent.child[0]:
-                    sib = parent.child[1]
-                    if len(sib.key) == 1:
-                        gparent = self.get_parent(parent)
-                        parent_i = gparent.child.index(parent)
-                        sib.key.insert(0, parent.key.pop(0))
-                        if parent is self.root:
-                            self.root = sib
-                            self.N_key -= 1
-                            return
-                        if len(parent.key) == 0:
-                            gparent.child[parent_i] = sib
-                            self.N_key -= 1
-                            return
-                        parent.child.pop(0)
-                        while len(parent.child) < 5:
-                            parent.child.append(None)
-                        self.N_key -= 1
-                        return
-                    else:
-                        target.key[0] = parent.key.pop(0)
-                        parent.key.insert(0, sib.key.pop(0))
-                        self.N_key -= 1
-                        return
-                else:
-                    child_i = parent.child.index(target)
-                    sib = parent.child[child_i - 1]
-                    if len(sib.key) == 1:
-                        gparent = self.get_parent(parent)
-                        parent_i = gparent.child.index(parent)
-                        sib.key.append(parent.key.pop(child_i - 1))
-                        if parent is self.root:
-                            self.root = sib
-                            self.N_key -= 1
-                            return
-                        if len(parent.key) == 0:
-                            gparent.child[parent_i] = sib
-                            self.N_key -= 1
-                            return
-                        parent.child.pop(child_i)
-                        while len(parent.child) < self.degree:
-                            parent.child.append(None)
-                        self.N_key -= 1
-                        return
-                    else:
-                        target.key[0] = parent.key.pop(child_i - 1)
-                        parent.key.insert(child_i - 1, sib.key.pop(-1))
-                        self.N_key -= 1
-                        return
+            target.key.remove(key)
+            if len(target.key) == 0:
+                cur = target
+                while len(cur.key) == 0:
+                    if cur is self.root:
+                        break
+                    parent_next = self.get_parent(parent)
+                    cur = self.merge(parent, cur)
+                    parent = parent_next
+                self.N_key -= 1
+                return
+
+            # if len(target.key) == 1:
+            #     if target is parent.child[0]:
+            #         sib = parent.child[1]
+            #         if len(sib.key) == 1:
+            #             gparent = self.get_parent(parent)
+            #             parent_i = gparent.child.index(parent)
+            #             sib.key.insert(0, parent.key.pop(0))
+            #             if parent is self.root:
+            #                 self.root = sib
+            #                 self.N_key -= 1
+            #                 return
+            #             if len(parent.key) == 0:
+            #                 gparent.child[parent_i] = sib
+            #                 self.N_key -= 1
+            #                 return
+            #             parent.child.pop(0)
+            #             while len(parent.child) < 5:
+            #                 parent.child.append(None)
+            #             self.N_key -= 1
+            #             return
+            #         else:
+            #             target.key[0] = parent.key.pop(0)
+            #             parent.key.insert(0, sib.key.pop(0))
+            #             self.N_key -= 1
+            #             return
+            #     else:
+            #         child_i = parent.child.index(target)
+            #         sib = parent.child[child_i - 1]
+            #         if len(sib.key) == 1:
+            #             gparent = self.get_parent(parent)
+            #             parent_i = gparent.child.index(parent)
+            #             sib.key.append(parent.key.pop(child_i - 1))
+            #             if parent is self.root:
+            #                 self.root = sib
+            #                 self.N_key -= 1
+            #                 return
+            #             if len(parent.key) == 0:
+            #                 gparent.child[parent_i] = sib
+            #                 self.N_key -= 1
+            #                 return
+            #             parent.child.pop(child_i)
+            #             while len(parent.child) < self.degree:
+            #                 parent.child.append(None)
+            #             self.N_key -= 1
+            #             return
+            #         else:
+            #             target.key[0] = parent.key.pop(child_i - 1)
+            #             parent.key.insert(child_i - 1, sib.key.pop(-1))
+            #             self.N_key -= 1
+            #             return
+
+
 
             # Case 2-2
             else:
-                target.key.pop(target.key.index(key))
                 self.N_key -= 1
                 return
         # Case 3
@@ -231,21 +244,146 @@ class BTree:
         suc = self.get_successor(key)
         key_i = target.key.index(key)
 
-        if len(pre.key) > 1:
+        # Case 3-1
+        if len(target.key) == 1:
+            # cur, parent = pre, self.get_parent(pre)
+            # target.key[key_i] = pre.key[-1]
+            # parent_next = self.get_parent(cur)
+            # cur.key.pop(-1)
+            # if len(cur.key) == 0:
+            #     if parent is target:
+            #         cur_sib = parent.child[1]
+            #         cur_sib.key.insert(0, parent.key.pop(0))
+            #         parent.child.pop(0)
+            #         parent.child.append(None)
+            #     else:
+            #         cur_child_i = parent.child.index(cur)
+            #         cur_sib = parent.child[cur_child_i - 1]
+            #         cur_sib.key.append(parent.key.pop(cur_child_i))
+            #         parent.child.pop(cur_child_i)
+            #         parent.child.append(None)
+            # cur = parent
+            # parent = parent_next
+            cur, parent = pre, self.get_parent(pre)
             target.key[key_i] = pre.key.pop(-1)
+
+            while len(cur.key) == 0:
+                if cur is self.root:
+                    self.root = cur.child[0]
+                    break
+                parent_next = self.get_parent(parent)
+                cur = self.merge(parent, cur)
+                parent = parent_next
             self.N_key -= 1
             return
-        elif len(suc.key) > 1:
-            target.key[key_i] = suc.key.pop(0)
-            self.N_key -= 1
-            return
+
+            # target.key[0] = target.pre[0].key.pop(-1)
+            # if len(target.child[0].key) == 0:
+            #     if len(target.child[1].key) == 1:
+            #
+            #     else:
+            #         target.child[0].key.append(target.key.pop(0))
+            #         target.key.append(target.child[1].key.pop(0))
+            # else:
+            #     pass
+
+
+        # Case 3-2
         else:
-            key_temp = pre.key[0]
-            self.delete(key_temp, pre)
-            target = self.search(key)
-            key_i = target.key.index(key)
-            target.key[key_i] = key_temp
-            return
+            if len(pre.key) > 1:
+                target.key[key_i] = pre.key.pop(-1)
+                self.N_key -= 1
+                return
+            elif len(suc.key) > 1:
+                target.key[key_i] = suc.key.pop(0)
+                self.N_key -= 1
+                return
+            else:
+                cur, parent = pre, self.get_parent(pre)
+                target.key[key_i] = pre.key.pop(0)
+                while len(cur.key) == 0:
+                    if cur is self.root:
+                        self.root = cur
+                        break
+                    parent_next = self.get_parent(parent)
+                    cur = self.merge(parent, cur)
+                    parent = parent_next
+                self.N_key -= 1
+                return
+
+
+
+
+
+                # key_temp = pre.key[0]
+                # self.delete(key_temp, pre)
+                # target = self.search(key)
+                # key_i = target.key.index(key)
+                # target.key[key_i] = key_temp
+                # return
+
+    def merge(self, parent, child_empty):
+        child_empty_i = parent.child.index(child_empty)
+        if child_empty_i == 0:
+            child_merge_i = 1
+            child_merge = parent.child[1]
+        else:
+            child_merge_i = child_empty_i - 1
+            child_merge = parent.child[child_merge_i]
+
+        sub_childs = []
+        if child_empty_i < child_merge_i:
+            sub_childs.append(child_empty.child[0])
+            for i in range(len(child_merge.key) + 1):
+                sub_childs.append(child_merge.child[i])
+
+            child_empty.key.append(parent.key.pop(child_empty_i))
+            if len(child_merge.key) > 1:
+                parent.key.insert(child_empty_i, child_merge.key.pop(0))
+            else:
+                child_empty.key.append(child_merge.key.pop(0))
+            # if len(parent.key) == 0:
+            #     child_empty.key.append(child_merge.key.pop(0))
+            # else:
+            #     parent.key.insert(child_empty_i, child_merge.key.pop(0))
+            if len(child_empty.key) > 0:
+                for i in range(len(child_empty.key) + 1):
+                    child_empty.child[i] = sub_childs.pop(0)
+            if len(child_merge.key) > 0:
+                for i in range(len(child_merge.key) + 1):
+                    child_merge.child[i] = sub_childs.pop(0)
+            if len(child_merge.key) == 0:
+                parent.child.pop(child_merge_i)
+                parent.child.append(None)
+
+            return parent
+        else:
+            for i in range(len(child_merge.key) + 1):
+                sub_childs.append(child_merge.child[i])
+            sub_childs.append(child_empty.child[0])
+
+            # child_empty.key.append(child_merge.key.pop(-1))
+            child_empty.key.append(parent.key.pop(child_merge_i))
+            if len(child_merge.key) > 1:
+                parent.key.insert(child_merge_i, child_merge.key.pop(-1))
+            else:
+                child_empty.key.insert(0, child_merge.key.pop(0))
+            # if len(parent.key) == 0:
+            #     child_empty.key.append(child_merge.key.pop(-1))
+            # else:
+            #     parent.key.insert(child_empty_i, child_merge.key.pop(-1))
+            if len(child_merge.key) > 0:
+                for i in range(len(child_merge.key) + 1):
+                    child_merge.child[i] = sub_childs.pop(0)
+            if len(child_empty.key) > 0:
+                for i in range(len(child_empty.key) + 1):
+                    child_empty.child[i] = sub_childs.pop(0)
+            if len(child_merge.key) == 0:
+                parent.child.pop(child_merge_i)
+                parent.child.append(None)
+
+            return parent
+
 
     def get_parent(self, node):
         if node is None:
