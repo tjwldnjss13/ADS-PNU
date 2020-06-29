@@ -4,29 +4,32 @@ import time
 import matplotlib.pyplot as plt
 
 
-class BTree:
-    class Node:
-        def __init__(self, key):
-            if type(key) == list:
-                self.key = key
-            else:
-                self.key = [key]
-            self.child = []
+class Node:
+    def __init__(self, pnt):
+        if type(pnt) == list:
+            self.pnt = pnt
+        else:
+            self.pnt = [pnt]
+        self.child = []
+        self.range_tree_y = None
 
-    def __init__(self, degree=3):
+
+class BTreePnt:
+    def __init__(self, degree=3, xy_idx=0):
         self.root = None
         self.degree = degree
-        self.N_key = 0
+        self.xy_idx = xy_idx
+        self.N_pnt = 0
         self.N_dup = 0
 
-    def create_node(self, key):
-        node = self.Node(key)
+    def create_node(self, pnt):
+        node = self.Node(pnt)
         for i in range(self.degree):
             node.child.append(None)
 
         return node
 
-    def search(self, key, node=None):
+    def search(self, pnt, node=None):
         if node is None:
             sub_root = self.root
         else:
@@ -35,103 +38,110 @@ class BTree:
             return None
         cur = sub_root
         while cur is not None:
-            if key in cur.key:
+            if pnt in cur.pnt:
                 return cur
-            if key < cur.key[0]:
+            if pnt[self.xy_idx] < cur.pnt[0][self.xy_idx]:
                 cur = cur.child[0]
                 continue
-            if key > cur.key[-1]:
-                cur = cur.child[len(cur.key)]
+            if pnt[self.xy_idx] > cur.pnt[-1][self.xy_idx]:
+                cur = cur.child[len(cur.pnt)]
                 continue
-            for i in range(1, len(cur.key)):
-                if cur.key[i - 1] < key < cur.key[i]:
+            for i in range(1, len(cur.pnt)):
+                if cur.pnt[i - 1][self.xy_idx] < pnt[self.xy_idx] < cur.pnt[i][self.xy_idx]:
                     cur = cur.child[i]
                     break
         return None
 
-    def insert(self, key):
-        if self.search(key) is not None:
+    def insert(self, pnt):
+        if self.search(pnt) is not None:
             self.N_dup += 1
             return
         if self.root is None:
-            self.root = self.create_node(key)
-            self.N_key += 1
+            self.root = self.create_node(pnt)
+            if self.xy_idx == 0:
+                self.root.range_tree_y = BTreePnt(self.degree, 1)
+            self.N_pnt += 1
             return
         next = self.root
         cur = None
         while next is not None:
             cur = next
-            if key < cur.key[0]:
+            if pnt[self.xy_idx] < cur.pnt[0][self.xy_idx]:
                 next = cur.child[0]
                 continue
-            if key > cur.key[-1]:
-                next = cur.child[len(cur.key)]
+            if pnt[self.xy_idx] > cur.pnt[-1][self.xy_idx]:
+                next = cur.child[len(cur.pnt)]
                 continue
-            for i in range(1, len(cur.key)):
-                if cur.key[i - 1] < key < cur.key[i]:
+            for i in range(1, len(cur.pnt)):
+                if cur.pnt[i - 1][self.xy_idx] < pnt[self.xy_idx] < cur.pnt[i][self.xy_idx]:
                     next = cur.child[i]
-        if len(cur.key) < self.degree - 1:
-            if key < cur.key[0]:
-                cur.key.insert(0, key)
-                self.N_key += 1
+        if len(cur.pnt) < self.degree - 1:
+            if pnt[self.xy_idx] < cur.pnt[0][self.xy_idx]:
+                cur.pnt.insert(0, pnt)
+                if self.xy_idx == 0:
+                    pass
+                self.N_pnt += 1
                 return
-            for i in range(1, len(cur.key)):
-                if cur.key[i - 1] < key < cur.key[i]:
-                    cur.key.insert(i, key)
-                    self.N_key += 1
+            for i in range(1, len(cur.pnt)):
+                if cur.pnt[i - 1][self.xy_idx] < pnt[self.xy_idx] < cur.pnt[i][self.xy_idx]:
+                    cur.pnt.insert(i, pnt)
+                    self.N_pnt += 1
                     return
-            if key > cur.key[-1]:
-                cur.key.append(key)
-                self.N_key += 1
+            if pnt[self.xy_idx] > cur.pnt[-1][self.xy_idx]:
+                cur.pnt.append(pnt)
+                self.N_pnt += 1
                 return
         else:
-            self.split(cur, key)
-            self.N_key += 1
+            self.split(cur, pnt)
+            self.N_pnt += 1
 
-    def split(self, node, key, sub_child=[]):
+    def insert_to_sub_range_tree(self, png):
+        pass
+
+    def split(self, node, pnt, sub_child=[]):
         if len(sub_child) == 0:
             for i in range(self.degree + 1):
                 sub_child.append(None)
 
         node_temp = copy.deepcopy(node)
-        node_temp.key.append(key)
-        node_temp.key.sort()
+        node_temp.pnt.append(pnt)
+        node_temp.pnt.sort()
 
         if node is self.root:
-            root_new = self.create_node(node_temp.key.pop(int((len(node_temp.key) - 1) / 2)))
+            root_new = self.create_node(node_temp.pnt.pop(int((len(node_temp.pnt) - 1) / 2)))
 
-            root_new.child[0] = self.create_node(key=copy.deepcopy(node_temp.key[:int(len(node_temp.key) / 2)]))
-            root_new.child[1] = self.create_node(key=copy.deepcopy(node_temp.key[int(len(node_temp.key) / 2):]))
-            for i in range(len(root_new.child[0].key) + 1):
+            root_new.child[0] = self.create_node(key=copy.deepcopy(node_temp.pnt[:int(len(node_temp.pnt) / 2)]))
+            root_new.child[1] = self.create_node(key=copy.deepcopy(node_temp.pnt[int(len(node_temp.pnt) / 2):]))
+            for i in range(len(root_new.child[0].pnt) + 1):
                 root_new.child[0].child[i] = sub_child.pop(0)
-            for i in range(len(root_new.child[1].key) + 1):
+            for i in range(len(root_new.child[1].pnt) + 1):
                 root_new.child[1].child[i] = sub_child.pop(0)
             self.root = root_new
             return
 
         parent = self.get_parent(node)
-        key_mid = node_temp.key.pop(int((len(node_temp.key) - 1) / 2))
+        pnt_mid = node_temp.pnt.pop(int((len(node_temp.pnt) - 1) / 2))
 
-        if len(parent.key) < self.degree - 1:
-            parent.key.append(key_mid)
-            parent.key.sort()
+        if len(parent.pnt) < self.degree - 1:
+            parent.pnt.append(pnt_mid)
+            parent.pnt.sort()
 
-            child_i = parent.key.index(key_mid)
-            parent.child[child_i] = self.create_node(key=copy.deepcopy(node_temp.key[:int(len(node.key) / 2)]))
-            parent.child.insert(child_i + 1, self.create_node(key=copy.deepcopy(node_temp.key[(int(len(node.key) / 2)):])))
+            child_i = parent.pnt.index(pnt_mid)
+            parent.child[child_i] = self.create_node(key=copy.deepcopy(node_temp.pnt[:int(len(node.pnt) / 2)]))
+            parent.child.insert(child_i + 1, self.create_node(key=copy.deepcopy(node_temp.pnt[(int(len(node.pnt) / 2)):])))
             while len(parent.child) > self.degree:
                 parent.child.pop(-1)
             for i in range(child_i, child_i + 2):
-                for j in range(len(parent.child[i].key) + 1):
+                for j in range(len(parent.child[i].pnt) + 1):
                     parent.child[i].child[j] = sub_child.pop(0)
 
         else:
-            node1 = self.create_node(key=copy.deepcopy(node_temp.key[:int(len(node.key) / 2)]))
-            node2 = self.create_node(key=copy.deepcopy(node_temp.key[int(len(node.key) / 2):]))
+            node1 = self.create_node(key=copy.deepcopy(node_temp.pnt[:int(len(node.pnt) / 2)]))
+            node2 = self.create_node(key=copy.deepcopy(node_temp.pnt[int(len(node.pnt) / 2):]))
 
-            for i in range(len(node1.key) + 1):
+            for i in range(len(node1.pnt) + 1):
                 node1.child[i] = sub_child.pop(0)
-            for i in range(len(node2.key) + 1):
+            for i in range(len(node2.pnt) + 1):
                 node2.child[i] = sub_child.pop(0)
 
             child_i = parent.child.index(node)
@@ -143,9 +153,9 @@ class BTree:
                     sub_child_new.append(node2)
                 else:
                     sub_child_new.append(parent.child[i])
-            self.split(parent, key_mid, sub_child_new)
+            self.split(parent, pnt_mid, sub_child_new)
 
-    def delete(self, key, node=None):
+    def delete(self, pnt, node=None):
         # Cases
         # 1) Key is not in the tree
         # 2) Key is in a leaf note
@@ -155,7 +165,7 @@ class BTree:
         #    3-1) 1 key in a node
         #    3-2) More than 1 key in a node
 
-        target = self.search(key, node)
+        target = self.search(pnt, node)
         parent = self.get_parent(target)
 
         # Case 1
@@ -164,64 +174,64 @@ class BTree:
         # Case 2
         if target.child[0] is None:
             # Case 2-1
-            target.key.remove(key)
-            if len(target.key) == 0:
+            target.pnt.remove(pnt)
+            if len(target.pnt) == 0:
                 cur = target
-                while len(cur.key) == 0:
+                while len(cur.pnt) == 0:
                     if cur is self.root:
                         self.root = cur.child[0]
                         break
                     parent_next = self.get_parent(parent)
                     cur = self.merge(parent, cur)
                     parent = parent_next
-                self.N_key -= 1
+                self.N_pnt -= 1
                 return
 
             # Case 2-2
             else:
-                self.N_key -= 1
+                self.N_pnt -= 1
                 return
         # Case 3
-        pre = self.get_predecessor(key)
-        suc = self.get_successor(key)
-        key_i = target.key.index(key)
+        pre = self.get_predecessor(pnt)
+        suc = self.get_successor(pnt)
+        pnt_i = target.pnt.index(pnt)
 
         # Case 3-1
-        if len(target.key) == 1:
+        if len(target.pnt) == 1:
             cur, parent = pre, self.get_parent(pre)
-            target.key[key_i] = pre.key.pop(-1)
+            target.pnt[pnt_i] = pre.pnt.pop(-1)
 
-            while len(cur.key) == 0:
+            while len(cur.pnt) == 0:
                 if cur is self.root:
                     self.root = cur.child[0]
                     break
                 parent_next = self.get_parent(parent)
                 cur = self.merge(parent, cur)
                 parent = parent_next
-            self.N_key -= 1
+            self.N_pnt -= 1
             return
 
         # Case 3-2
         else:
-            if len(pre.key) > 1:
-                target.key[key_i] = pre.key.pop(-1)
-                self.N_key -= 1
+            if len(pre.pnt) > 1:
+                target.pnt[pnt_i] = pre.pnt.pop(-1)
+                self.N_pnt -= 1
                 return
-            elif len(suc.key) > 1:
-                target.key[key_i] = suc.key.pop(0)
-                self.N_key -= 1
+            elif len(suc.pnt) > 1:
+                target.pnt[pnt_i] = suc.pnt.pop(0)
+                self.N_pnt -= 1
                 return
             else:
                 cur, parent = pre, self.get_parent(pre)
-                target.key[key_i] = pre.key.pop(0)
-                while len(cur.key) == 0:
+                target.pnt[pnt_i] = pre.pnt.pop(0)
+                while len(cur.pnt) == 0:
                     if cur is self.root:
                         self.root = cur
                         break
                     parent_next = self.get_parent(parent)
                     cur = self.merge(parent, cur)
                     parent = parent_next
-                self.N_key -= 1
+                self.N_pnt -= 1
                 return
 
     def merge(self, parent, child_empty):
@@ -236,134 +246,131 @@ class BTree:
         sub_childs = []
         if child_empty_i < child_merge_i:
             sub_childs.append(child_empty.child[0])
-            for i in range(len(child_merge.key) + 1):
+            for i in range(len(child_merge.pnt) + 1):
                 sub_childs.append(child_merge.child[i])
 
-            child_empty.key.append(parent.key.pop(child_empty_i))
-            if len(child_merge.key) > 1:
-                parent.key.insert(child_empty_i, child_merge.key.pop(0))
+            child_empty.pnt.append(parent.pnt.pop(child_empty_i))
+            if len(child_merge.pnt) > 1:
+                parent.pnt.insert(child_empty_i, child_merge.pnt.pop(0))
             else:
-                child_empty.key.append(child_merge.key.pop(0))
+                child_empty.pnt.append(child_merge.pnt.pop(0))
 
-            if len(child_empty.key) > 0:
+            if len(child_empty.pnt) > 0:
                 for i in range(self.degree):
-                    if i < len(child_empty.key) + 1:
+                    if i < len(child_empty.pnt) + 1:
                         child_empty.child[i] = sub_childs.pop(0)
                     else:
                         child_empty.child[i] = None
-            if len(child_merge.key) > 0:
+            if len(child_merge.pnt) > 0:
                 for i in range(self.degree):
-                    if i < len(child_merge.key) + 1:
+                    if i < len(child_merge.pnt) + 1:
                         child_merge.child[i] = sub_childs.pop(0)
                     else:
                         child_merge.child[i] = None
-            if len(child_merge.key) == 0:
+            if len(child_merge.pnt) == 0:
                 parent.child.pop(child_merge_i)
                 parent.child.append(None)
 
             return parent
         else:
-            for i in range(len(child_merge.key) + 1):
+            for i in range(len(child_merge.pnt) + 1):
                 sub_childs.append(child_merge.child[i])
             sub_childs.append(child_empty.child[0])
 
-            child_empty.key.append(parent.key.pop(child_merge_i))
-            if len(child_merge.key) > 1:
-                parent.key.insert(child_merge_i, child_merge.key.pop(-1))
+            child_empty.pnt.append(parent.pnt.pop(child_merge_i))
+            if len(child_merge.pnt) > 1:
+                parent.key.insert(child_merge_i, child_merge.pnt.pop(-1))
             else:
-                child_empty.key.insert(0, child_merge.key.pop(0))
+                child_empty.pnt.insert(0, child_merge.pnt.pop(0))
 
-            if len(child_merge.key) > 0:
+            if len(child_merge.pnt) > 0:
                 for i in range(self.degree):
-                    if i < len(child_merge.key) + 1:
+                    if i < len(child_merge.pnt) + 1:
                         child_merge.child[i] = sub_childs.pop(0)
                     else:
                         child_merge.child[i] = None
-            if len(child_empty.key) > 0:
+            if len(child_empty.pnt) > 0:
                 for i in range(self.degree):
-                    if i < len(child_empty.key) + 1:
+                    if i < len(child_empty.pnt) + 1:
                         child_empty.child[i] = sub_childs.pop(0)
                     else:
                         child_empty.child[i] = None
-            if len(child_merge.key) == 0:
+            if len(child_merge.pnt) == 0:
                 parent.child.pop(child_merge_i)
                 parent.child.append(None)
 
             return parent
-
 
     def get_parent(self, node):
         if node is None:
             return None
         if node is self.root:
             return None
-        key = node.key[0]
+        pnt = node.pnt[0]
         cur = self.root
         parent = None
         while cur is not None:
             if cur is node:
                 return parent
             parent = cur
-            if key in cur.key:
+            if pnt in cur.pnt:
                 return parent
-            if key < cur.key[0]:
+            if pnt[self.xy_idx] < cur.pnt[0]:
                 cur = cur.child[0]
                 continue
-            if key > cur.key[-1]:
-                cur = cur.child[len(cur.key)]
+            if pnt[self.xy_idx] > cur.pnt[-1][self.xy_idx]:
+                cur = cur.child[len(cur.pnt)]
                 continue
-            for i in range(1, len(cur.key)):
-                if cur.key[i - 1] < key < cur.key[i]:
+            for i in range(1, len(cur.pnt)):
+                if cur.pnt[i - 1][self.xy_idx] < pnt[self.xy_idx] < cur.pnt[i][self.xy_idx]:
                     cur = cur.child[i]
                     break
         return None
 
-    def get_predecessor(self, key):
-        node = self.search(key)
+    def get_predecessor(self, pnt):
+        node = self.search(pnt)
         if node is None:
             return None
         if node.child[0] is None:
             return None
-        key_i = node.key.index(key)
-        cur = node.child[key_i]
+        pnt_i = node.pnt.index(pnt)
+        cur = node.child[pnt_i]
         if cur is None:
             return None
-        while cur.child[len(cur.key)] is not None:
-            cur = cur.child[len(cur.key)]
+        while cur.child[len(cur.pnt)] is not None:
+            cur = cur.child[len(cur.pnt)]
         return cur
 
-    def get_successor(self, key):
-        node = self.search(key)
+    def get_successor(self, pnt):
+        node = self.search(pnt)
         if node is None:
             return None
         if node.child[0] is None:
             return None
-        key_i = node.key.index(key)
-        cur = node.child[key_i + 1]
+        pnt_i = node.pnt.index(pnt)
+        cur = node.child[pnt_i + 1]
         if cur is None:
             return None
         while cur.child[0] is not None:
             cur = cur.child[0]
         return cur
 
-    @staticmethod
-    def print_tree(tree):
-        if tree.root is not None:
-            BTree.print_tree_util(tree.root, 0)
+    def print_tree(self):
+        if self.root is not None:
+            BTreePnt.print_tree_util(self.root, 0)
 
-    @staticmethod
-    def print_tree_util(node, depth):
-        if node.child[len(node.key)] is not None:
-            BTree.print_tree_util(node.child[len(node.key)], depth + 1)
-        for i in range(len(node.key) - 1, 0, -1):
+    def print_tree_util(self, node, depth):
+        if node.child[len(node.pnt)] is not None:
+            BTreePnt.print_tree_util(node.child[len(node.pnt)], depth + 1)
+        for i in range(len(node.pnt) - 1, 0, -1):
             print('    ' * depth, end='')
-            print(node.key[i])
+            print('({},{})'.format(node.pnt[i][0], node.pnt[i][1]))
             if node.child[i] is not None:
-                BTree.print_tree_util(node.child[i], depth + 1)
+                BTreePnt.print_tree_util(node.child[i], depth + 1)
         print('    ' * depth, end='')
-        print(node.key[0])
+        print('({},{})'.format(node.pnt[0][0], node.pnt[0][1]))
         if node.child[0] is not None:
-            BTree.print_tree_util(node.child[0], depth + 1)
+            BTreePnt.print_tree_util(node.child[0], depth + 1)
 
 
 if __name__ == '__main__':
@@ -376,7 +383,7 @@ if __name__ == '__main__':
         N_data_list.append(i + 1)
         datas[i] = int(datas[i])
 
-    _23tree, _234tree = BTree(3), BTree(4)
+    _23tree, _234tree = BTreePnt(3), BTreePnt(4)
 
     print('Inserting...')
 

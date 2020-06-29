@@ -37,7 +37,10 @@ print('Searching...')
 _23_search_time = []
 start = time.time()
 for i in range(len(datas)):
-    data_search = random.randint(1, len(datas))
+    if i < int(len(datas) * .7):
+        data_search = random.randint(1, len(datas))
+    else:
+        data_search = random.randint(len(datas) + 1, 2 * len(datas))
     _23tree.search(data_search)
     mid = time.time()
     _23_search_time.append(mid - start)
@@ -56,7 +59,7 @@ print('Deleting...')
 
 _23_delete_time = []
 start = time.time()
-for i in range(len(datas) / 2):
+for i in range(int(len(datas) / 2)):
     _23tree.delete(datas[-1])
     mid = time.time()
     _23_delete_time.append(mid - start)
@@ -64,7 +67,7 @@ for i in range(len(datas) / 2):
 N_delete_list = []
 _234_delete_time = []
 start = time.time()
-for i in range(len(datas) / 2):
+for i in range(int(len(datas) / 2)):
     _234tree.delete(datas[-1])
     mid = time.time()
     _234_delete_time.append(mid - start)
@@ -99,7 +102,7 @@ plt.legend()
 plt.figure(2)
 plt.plot(N_delete_list, _23_delete_time, 'r-', label='23 Tree')
 plt.plot(N_delete_list, _234_delete_time, 'b:', label='234 Tree')
-plt.title('Insert time')
+plt.title('Delete time')
 plt.legend()
 
 plt.show()
