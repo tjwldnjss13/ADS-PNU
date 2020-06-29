@@ -2,7 +2,8 @@ from challenge import *
 
 
 class Node:
-    def __init__(self, pnt, color='b'):
+    def __init__(self, index, pnt, color='b'):
+        self.index = index
         self.pnt = pnt
         self.left = None
         self.right = None
@@ -33,14 +34,14 @@ class RedBlackTreePnt:
             else:
                 return cur
 
-    def insert(self, pnt):
+    def insert(self, index, pnt):
         if self.search(pnt) is not None:
             return
         if self.root is None:
-            node = Node(pnt)
-            if self.xy_idx == 0:
-                node.range_tree_y = RedBlackTreePnt(1)
-                node.range_tree_y.insert(pnt)
+            node = Node(index, pnt)
+            # if self.xy_idx == 0:
+            #     node.range_tree_y = RedBlackTreePnt(1)
+            #     node.range_tree_y.insert(pnt)
             self.root = node
             self.N_pnt += 1
         else:
@@ -53,9 +54,9 @@ class RedBlackTreePnt:
                         cur = cur.left
                     else:
                         cur = cur.right
-                node = Node(pnt=pnt, color='r')
-                if self.xy_idx == 0:
-                    node.range_tree_y = RedBlackTreePnt(1)
+                node = Node(index, pnt, 'r')
+                # if self.xy_idx == 0:
+                #     node.range_tree_y = RedBlackTreePnt(1)
                 if pnt[self.xy_idx] < parent.pnt[self.xy_idx]:
                     parent.left = node
                 else:
@@ -73,8 +74,8 @@ class RedBlackTreePnt:
                     self.balance(node)
 
                 # Make tree of y
-                if self.xy_idx == 0:
-                    self.update_sub_range_tree()
+                # if self.xy_idx == 0:
+                #     self.update_sub_range_tree()
 
     def insert_to_sub_range_tree(self, pnt):
         self.insert_to_sub_range_tree_util(self.root, pnt)
@@ -178,12 +179,12 @@ class RedBlackTreePnt:
 
         # When target's color is red, just delete it
         if target_color == 'r':
-            self.update_sub_range_tree()
+            # self.update_sub_range_tree()
             return
         # When target's color is black
         else:
             if not double_black_f:
-                self.update_sub_range_tree()
+                # self.update_sub_range_tree()
                 return
 
             if child_f == 0:
@@ -191,14 +192,17 @@ class RedBlackTreePnt:
             elif child_f == 1:
                 sib = parent.left
             else:
-                self.update_sub_range_tree()
+                # self.update_sub_range_tree()
                 return
 
             self.update_after_delete(target, parent, sib, child_f)
-            self.update_sub_range_tree()
+            # self.update_sub_range_tree()
 
     def update_after_delete(self, target, parent, sib, child_f):
         if parent is None:
+            return
+
+        if sib is None:
             return
 
         # When sibling's color is red
@@ -269,7 +273,7 @@ class RedBlackTreePnt:
                             child_f = 1
                             sib = parent.left
 
-                        self.delete_update(target, parent, sib, child_f)
+                        self.update_after_delete(target, parent, sib, child_f)
 
                 # When siblings' left is black and right is red
                 elif (sib.left is None or (sib.left is not None and sib.left.color == 'b')) and (
@@ -280,7 +284,9 @@ class RedBlackTreePnt:
                 # When sibling's left is red
                 else:
                     sib.color = parent.color
-                    parent.color, sib.left.color = 'b', 'b'
+                    parent.color = 'b'
+                    if sib.left is not None:
+                        sib.left.color = 'b'
                     self.rotate_right(parent)
 
     def update_sub_range_tree(self):
@@ -544,7 +550,7 @@ class RedBlackTreePnt:
     def print_tree_util(node, depth):
         if node.right is not None:
             RedBlackTreePnt.print_tree_util(node.right, depth + 1)
-        print(depth * '           ', end='')
+        print(depth * '                   ', end='')
         print('({},{}):{}'.format(node.pnt[0], node.pnt[1], node.color))
         if node.left is not None:
             RedBlackTreePnt.print_tree_util(node.left, depth + 1)
