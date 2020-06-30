@@ -124,7 +124,7 @@ def get_nodes_in_subtree(cur, nodes):
 def main():
     range_tree_x = RedBlackTreePnt(0)
 
-    fp_in = 'pin_1.txt'
+    fp_in = 'input.txt'
     pin = read_file(fp_in)
 
     fp_out = 'output.txt'
@@ -132,6 +132,7 @@ def main():
 
     n = len(pin)
     n_i = 1
+    N_insert, N_delete, N_query = 0, 0, 0
 
     start = time.time()
     for query in pin:
@@ -140,16 +141,18 @@ def main():
         q = query.split()
 
         if q[0] == '+':
+            N_insert += 1
             index, pnt = int(q[1]), (int(q[2]), int(q[3]))
             POINT_DICT[index] = pnt
             range_tree_x.insert(index, POINT_DICT[index])
-            # range_tree_x.print_tree()
         elif q[0] == '-':
+            N_delete += 1
             index = int(q[1])
             if index in POINT_DICT.keys():
                 range_tree_x.delete(POINT_DICT[index])
-            # del ptn_dict[i]
+                del POINT_DICT[index]
         elif q[0] == '?':
+            N_query += 1
             pnt, r = (int(q[1]), int(q[2])), int(q[3])
 
             idxs, pnts, max_i_list = range_search(range_tree_x, pnt, r)
@@ -157,11 +160,36 @@ def main():
             if len(pnts) != 0:
                 pout.write(' ' + str(min(max_i_list)))
             pout.write('\n')
-
+        # range_tree_x.print_tree()
         # print('-----------------------------------------------------')
-    end = time.time
+
+    range_tree_x.print_tree()
+
+    end = time.time()
     pout.close()
-    print('Time : {}'.format(end - start))
+    print('{} sec\n'.format(end - start))
+    print('{} / {} insertion'.format(N_insert, n))
+    print('{} / {} deletion'.format(N_delete, n))
+    print('{} / {} query\n'.format(N_query, n))
+
+    correct_fp = 'pout_2.txt'
+    correct_f = open(correct_fp, 'r')
+    correct_lines = correct_f.readlines()
+    correct_f.close()
+    my_fp = 'output.txt'
+    my_f = open(my_fp, 'r')
+    my_lines = my_f.readlines()
+    my_f.close()
+
+    N_out = 0
+    N_acc = 0
+    for i in range(len(my_lines)):
+        if correct_lines[i] == my_lines[i]:
+            N_acc += 1
+        N_out += 1
+
+    print('Correct : {} / {}'.format(N_acc, N_out))
+
 
 
 
