@@ -3,11 +3,12 @@ from challenge import *
 
 class Node:
     def __init__(self, index, pnt, color='b'):
-        self.index = index
-        self.pnt = pnt
+        self.index = [index]
+        self.pnt = [pnt]
         self.left = None
         self.right = None
         self.parent = None
+        self.next = None
         self.color = color
         self.depth = 0
         self.range = None
@@ -18,25 +19,40 @@ class RedBlackTreePnt:
     def __init__(self, xy_idx):
         self.root = None
         self.xy_idx = xy_idx
+        self.N_dup = 0
         self.N_pnt = 0
+        self.N_del = 0
+        self.N_del_fail = 0
 
     def search(self, pnt):
         cur = self.root
-        if cur is None:
-            return None
-        if cur.pnt[0] == pnt[0] and cur.pnt[1] == pnt[1]:
-            return cur
         while cur is not None:
-            if pnt[self.xy_idx] < cur.pnt[self.xy_idx]:
+            if pnt[self.xy_idx] < cur.pnt[0][self.xy_idx]:
                 cur = cur.left
-            elif pnt[self.xy_idx] > cur.pnt[self.xy_idx]:
+            elif pnt[self.xy_idx] > cur.pnt[0][self.xy_idx]:
                 cur = cur.right
             else:
-                return cur
+                for i in range(len(cur.pnt)):
+                    if cur.pnt[i][1 - self.xy_idx] == pnt[1 - self.xy_idx]:
+                        return cur
+                break
+        return None
 
     def insert(self, index, pnt):
-        if self.search(pnt) is not None:
+        # 중복 허용함
+        node_searched = self.search(pnt)
+        if node_searched is not None:
+            node_searched.index.append(index)
+            node_searched.pnt.append(pnt)
+            self.N_pnt += 1
+            self.N_dup += 1
             return
+
+        # 중복 허용 안 함
+        # if self.search(pnt) is not None:
+        #     self.N_dup += 1
+        #     return
+
         if self.root is None:
             node = Node(index, pnt)
             # if self.xy_idx == 0:
@@ -48,64 +64,82 @@ class RedBlackTreePnt:
             if self.search(pnt) is None:
                 cur = self.root
                 parent = None
+                dup_f = False
                 while cur is not None:
                     parent = cur
-                    if pnt[self.xy_idx] < cur.pnt[self.xy_idx]:
+                    if pnt[self.xy_idx] < cur.pnt[0][self.xy_idx]:
                         cur = cur.left
-                    else:
+                    elif pnt[self.xy_idx] > cur.pnt[0][self.xy_idx]:
                         cur = cur.right
+                    else:
+                        dup_f = True
+                        break
                 node = Node(index, pnt, 'r')
                 # if self.xy_idx == 0:
                 #     node.range_tree_y = RedBlackTreePnt(1)
-                if pnt[self.xy_idx] < parent.pnt[self.xy_idx]:
-                    parent.left = node
+                if dup_f:
+                    cur.pnt.append(pnt)
+                    cur.index.append(index)
                 else:
-                    parent.right = node
-                node.parent = parent
-                # node.depth = parent.depth + 1
+                    if pnt[self.xy_idx] < parent.pnt[0][self.xy_idx]:
+                        parent.left = node
+                    else:
+                        parent.right = node
+                    node.parent = parent
+                    # node.depth = parent.depth + 1
+
+
+                    # # Make tree of y
+                    # if self.xy_idx == 0:
+                    #     self.insert_to_sub_range_tree(pnt)
+
+                    # Reconstruct / Recolor conditions
+                    if node.parent.color == 'r':
+                        self.balance(node)
+
                 self.N_pnt += 1
-
-                # # Make tree of y
-                # if self.xy_idx == 0:
-                #     self.insert_to_sub_range_tree(pnt)
-
-                # Reconstruct / Recolor conditions
-                if node.parent.color == 'r':
-                    self.balance(node)
 
                 # Make tree of y
                 # if self.xy_idx == 0:
                 #     self.update_sub_range_tree()
 
-    def insert_to_sub_range_tree(self, pnt):
-        self.insert_to_sub_range_tree_util(self.root, pnt)
-
-    def insert_to_sub_range_tree_util(self, cur, pnt, start=None, end=None):
-        if cur.right is not None:
-            self.insert_to_sub_range_tree_util(cur.right, pnt, start=cur.pnt[self.xy_idx], end=end)
-
-        # Case : Root
-        if start is None and end is None:
-            cur.range_tree_y.insert(pnt)
-        # Case : Right-most node
-        elif start is not None and end is None:
-            if pnt[self.xy_idx] >= start:
-                cur.range_tree_y.insert(pnt)
-        # Case : Left-most node
-        elif start is None and end is not None:
-            if pnt[self.xy_idx] <= end:
-                cur.range_tree_y.insert(pnt)
-        # Case : Internal node
-        else:
-            if start <= cur.pnt[self.xy_idx] <= end:
-                cur.range_tree_y.insert(pnt)
-
-        if cur.left is not None:
-            self.insert_to_sub_range_tree_util(cur.left, pnt, start=start, end=cur.pnt[self.xy_idx])
+    # def insert_to_sub_range_tree(self, pnt):
+    #     self.insert_to_sub_range_tree_util(self.root, pnt)
+    #
+    # def insert_to_sub_range_tree_util(self, cur, pnt, start=None, end=None):
+    #     if cur.right is not None:
+    #         self.insert_to_sub_range_tree_util(cur.right, pnt, start=cur.pnt[self.xy_idx], end=end)
+    #
+    #     # Case : Root
+    #     if start is None and end is None:
+    #         cur.range_tree_y.insert(pnt)
+    #     # Case : Right-most node
+    #     elif start is not None and end is None:
+    #         if pnt[self.xy_idx] >= start:
+    #             cur.range_tree_y.insert(pnt)
+    #     # Case : Left-most node
+    #     elif start is None and end is not None:
+    #         if pnt[self.xy_idx] <= end:
+    #             cur.range_tree_y.insert(pnt)
+    #     # Case : Internal node
+    #     else:
+    #         if start <= cur.pnt[self.xy_idx] <= end:
+    #             cur.range_tree_y.insert(pnt)
+    #
+    #     if cur.left is not None:
+    #         self.insert_to_sub_range_tree_util(cur.left, pnt, start=start, end=cur.pnt[self.xy_idx])
 
     def delete(self, pnt):
         target = self.search(pnt)
         if target is None:
+            self.N_del_fail += 1
+            return
+        if len(target.pnt) > 1:
+            del_i = target.pnt.index(pnt)
+            target.pnt.pop(del_i)
+            target.index.pop(del_i)
+            self.N_del += 1
+            self.N_pnt -= 1
             return
         parent = target.parent
         if target is self.root:
@@ -128,8 +162,8 @@ class RedBlackTreePnt:
 
         # When target is an internal node
         elif target.left is not None and target.right is None:
-            if self.xy_idx == 0:
-                target.left.range_tree_y = target.range_tree_y
+            # if self.xy_idx == 0:
+            #     target.left.range_tree_y = target.range_tree_y
             if child_f == 0:
                 parent.left = target.left
                 parent.left.parent = parent
@@ -143,8 +177,8 @@ class RedBlackTreePnt:
                     double_black_f = True
                 parent.right.color = 'b'
         elif target.left is None and target.right is not None:
-            if self.xy_idx == 0:
-                target.right.range_tree_y = target.range_tree_y
+            # if self.xy_idx == 0:
+            #     target.right.range_tree_y = target.range_tree_y
             if child_f == 0:
                 parent.left = target.right
                 parent.left.parent = parent
@@ -163,15 +197,15 @@ class RedBlackTreePnt:
 
             # Replace target to successor/predecessor
             if pre_depth < suc_depth:
-                if self.xy_idx == 0:
-                    suc.range_tree_y = target.range_tree_y
+                # if self.xy_idx == 0:
+                #     suc.range_tree_y = target.range_tree_y
                 if suc.color == 'b':
                     double_black_f = True
                 suc.color = 'b'
                 self.replace_to_successor(target, suc)
             else:
-                if self.xy_idx == 0:
-                    pre.range_tree_y = target.range_tree_y
+                # if self.xy_idx == 0:
+                #     pre.range_tree_y = target.range_tree_y
                 if pre.color == 'b':
                     double_black_f = True
                 pre.color = 'b'
@@ -180,11 +214,15 @@ class RedBlackTreePnt:
         # When target's color is red, just delete it
         if target_color == 'r':
             # self.update_sub_range_tree()
+            self.N_pnt -= 1
+            self.N_del += 1
             return
         # When target's color is black
         else:
             if not double_black_f:
                 # self.update_sub_range_tree()
+                self.N_pnt -= 1
+                self.N_del += 1
                 return
 
             if child_f == 0:
@@ -193,17 +231,21 @@ class RedBlackTreePnt:
                 sib = parent.left
             else:
                 # self.update_sub_range_tree()
+                self.N_pnt -= 1
+                self.N_del += 1
                 return
 
             self.update_after_delete(target, parent, sib, child_f)
+            self.N_del += 1
+            self.N_pnt -= 1
             # self.update_sub_range_tree()
 
     def update_after_delete(self, target, parent, sib, child_f):
         if parent is None:
             return
 
-        if sib is None:
-            return
+        # if sib is None:
+        #     return
 
         # When sibling's color is red
         if sib.color == 'r':
@@ -551,7 +593,26 @@ class RedBlackTreePnt:
         if node.right is not None:
             RedBlackTreePnt.print_tree_util(node.right, depth + 1)
         print(depth * '                   ', end='')
-        print('({},{}):{}'.format(node.pnt[0], node.pnt[1], node.color))
+        print('({},{}):{}'.format(node.pnt[0], node.pnt[1], node.color), end='')
+        cnt = 0
+        cur = copy.deepcopy(node)
+        while cur is not None:
+            cnt += 1
+            cur = cur.next
+        if cnt >= 2:
+            print('({})'.format(cnt), end='')
+        print()
         if node.left is not None:
             RedBlackTreePnt.print_tree_util(node.left, depth + 1)
+
+    def count_nodes(self):
+        return self.count_nodes_util(self.root, 0)
+
+    def count_nodes_util(self, node, count):
+        if node.right is not None:
+            count = self.count_nodes_util(node.right, count)
+        count += len(node.pnt)
+        if node.left is not None:
+            count = self.count_nodes_util(node.left, count)
+        return count
 

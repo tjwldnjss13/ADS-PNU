@@ -23,10 +23,7 @@ def range_search(range_tree_x, pnt_center, radius):
     range_x, range_y = (x_min, x_max), (y_min, y_max)
 
     nodes = find_nodes_in_range(range_tree_x, (range_x, range_y))
-    idxs, pnts = [], []
-    for node_i in range(len(nodes)):
-        idxs.append(nodes[node_i].index)
-        pnts.append(nodes[node_i].pnt)
+    idxs, pnts = get_index_point_from_nodes(nodes)
 
     max_dist_i = -1
     max_dist_sq = -1
@@ -59,9 +56,9 @@ def find_nodes_in_range(range_tree, ranges, xy_idx=0):
         return []
     splitv = None
     while cur is not None:
-        if cur.pnt[xy_idx] < range[0]:
+        if cur.pnt[0][xy_idx] < range[0]:
             cur = cur.right
-        elif cur.pnt[xy_idx] > range[1]:
+        elif cur.pnt[0][xy_idx] > range[1]:
             cur = cur.left
         else:
             splitv = cur
@@ -71,27 +68,29 @@ def find_nodes_in_range(range_tree, ranges, xy_idx=0):
     nodes.append(splitv)
     t_l, t_r = splitv.left, splitv.right
     while t_l is not None:
-        if t_l.pnt[xy_idx] < range[0]:
+        if t_l.pnt[0][xy_idx] < range[0]:
             t_l = t_l.right
-        elif t_l.pnt[xy_idx] >= range[0]:
+        else:
             nodes.append(t_l)
             nodes_subtree = get_nodes_in_subtree(t_l.right, [])
             nodes += nodes_subtree
-            if t_l.pnt[xy_idx] == range[0]:
+            if t_l.pnt[0][xy_idx] == range[0]:
                 break
             else:
                 t_l = t_l.left
+            # t_l = t_l.left
     while t_r is not None:
-        if t_r.pnt[xy_idx] > range[1]:
+        if t_r.pnt[0][xy_idx] > range[1]:
             t_r = t_r.left
-        elif t_r.pnt[xy_idx] <= range[1]:
+        else:
             nodes.append(t_r)
             nodes_subtree = get_nodes_in_subtree(t_r.left, [])
             nodes += nodes_subtree
-            if t_r.pnt[xy_idx] == range[1]:
+            if t_r.pnt[0][xy_idx] == range[1]:
                 break
             else:
                 t_r = t_r.right
+            # t_r = t_r.right
 
     # Make range tree of y
     if xy_idx == 0:
@@ -105,7 +104,8 @@ def find_nodes_in_range(range_tree, ranges, xy_idx=0):
 def make_range_tree_y(nodes):
     range_tree_y = RedBlackTreePnt(1)
     for node in nodes:
-        range_tree_y.insert(node.index, node.pnt)
+        for i in range(len(node.pnt)):
+            range_tree_y.insert(node.index[i], node.pnt[i])
 
     return range_tree_y
 
@@ -121,10 +121,44 @@ def get_nodes_in_subtree(cur, nodes):
     return nodes
 
 
+def get_index_point_from_nodes(nodes):
+    idxs, pnts = [], []
+    for node in nodes:
+        for i in range(len(node.pnt)):
+            idxs.append(node.index[i])
+            pnts.append(node.pnt[i])
+
+    return idxs, pnts
+
+
+def print_time(sec):
+    if sec < 60:
+        print('{:.2f}s'.format(sec))
+    elif sec < 60 * 60:
+        m = 0
+        while sec >= 60:
+            sec -= 60
+            m += 1
+        print('{}m {:.2f}s'.format(m, sec))
+    else:
+        h, m = 0, 0
+        while sec >= 60 * 60:
+            sec -= 60 * 60
+            h += 1
+        while sec >= 60:
+            sec -= 60
+            m += 1
+        print('{}h {}m {:.2f}s'.format(h, m, sec))
+
+
+n_i = 0
+
 def main():
+    global n_i
+
     range_tree_x = RedBlackTreePnt(0)
 
-    fp_in = 'input.txt'
+    fp_in = 'pin_2.txt'
     pin = read_file(fp_in)
 
     fp_out = 'output.txt'
@@ -133,11 +167,12 @@ def main():
     n = len(pin)
     n_i = 1
     N_insert, N_delete, N_query = 0, 0, 0
+    N_search_success = 0
+    N_actual_delete = 0
 
     start = time.time()
     for query in pin:
         print('{} / {}'.format(n_i, n))
-        n_i += 1
         q = query.split()
 
         if q[0] == '+':
@@ -145,12 +180,15 @@ def main():
             index, pnt = int(q[1]), (int(q[2]), int(q[3]))
             POINT_DICT[index] = pnt
             range_tree_x.insert(index, POINT_DICT[index])
+            if range_tree_x.search(pnt) is not None:
+                N_search_success += 1
         elif q[0] == '-':
             N_delete += 1
-            index = int(q[1])
-            if index in POINT_DICT.keys():
-                range_tree_x.delete(POINT_DICT[index])
-                del POINT_DICT[index]
+            # index = int(q[1])
+            # if index in POINT_DICT.keys():
+            #     N_actual_delete += 1
+            #     range_tree_x.delete(POINT_DICT[index])
+            #     del POINT_DICT[index]
         elif q[0] == '?':
             N_query += 1
             pnt, r = (int(q[1]), int(q[2])), int(q[3])
@@ -160,17 +198,35 @@ def main():
             if len(pnts) != 0:
                 pout.write(' ' + str(min(max_i_list)))
             pout.write('\n')
+
+        n_i += 1
         # range_tree_x.print_tree()
         # print('-----------------------------------------------------')
 
-    range_tree_x.print_tree()
+    pnts_fn = 'points.txt'
+    pnts_f = open(pnts_fn, 'w')
+    for pnt in pnts:
+        pnts_f.write('{} {}\n'.format(str(pnt[0]), str(pnt[1])))
+    pnts_f.close()
+
+    # range_tree_x.print_tree()
 
     end = time.time()
     pout.close()
-    print('{} sec\n'.format(end - start))
+
+    print()
+    print_time(end - start)
+
     print('{} / {} insertion'.format(N_insert, n))
-    print('{} / {} deletion'.format(N_delete, n))
+    print('{} / {} deletion ({} actually deleted)'.format(N_delete, n, N_actual_delete))
     print('{} / {} query\n'.format(N_query, n))
+
+    print('{} well inserted'.format(N_search_success))
+    print('{} points in the tree (Guess)'.format(range_tree_x.N_pnt))
+    print('{} points actually in the tree'.format(range_tree_x.count_nodes()))
+    print('{} duplicated points (not inserted)'.format(range_tree_x.N_dup))
+    print('{} points deleted ({} failed)\n'.format(range_tree_x.N_del, range_tree_x.N_del_fail))
+
 
     correct_fp = 'pout_2.txt'
     correct_f = open(correct_fp, 'r')
